@@ -1,9 +1,6 @@
 import sbtassembly.PathList
 
 val generalDeps = Seq(
-  "org.locationtech.geotrellis" %% "geotrellis-raster" % "1.2.0-RC2",
-  "org.locationtech.geotrellis" %% "geotrellis-s3"     % "1.2.0-RC2",
-  "org.locationtech.geotrellis" %% "geotrellis-spark"  % "1.2.0-RC2"
 )
 
 val extraResolvers = Seq(

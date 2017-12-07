@@ -90,18 +90,15 @@ object Operations {
         .head
     val polygonExtent = polygon.envelope
 
-    val col = dataset
-      .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-      .where(Intersects(polygon))
-      .where(Between(
-        ZonedDateTime.of(2019, 12, 22, 0, 0, 0, 0, ZoneOffset.UTC),
-        ZonedDateTime.of(2020, 6, 21, 0, 0, 0, 0, ZoneOffset.UTC)))
-      .result
-      .mask(polygon)
-
     println(
-      divideByCalendarMonth(col)
-        .map({ t => (t._1, t._2.map({ kv => areaToTasminTasmax(kv._2) })) })
+      query(
+        ZonedDateTime.of(2019, 12, 22, 0, 0, 0, 0, ZoneOffset.UTC),
+        ZonedDateTime.of(2020, 6, 21, 0, 0, 0, 0, ZoneOffset.UTC),
+        polygon,
+        divideByCalendarMonth,
+        areaToTasminTasmax,
+        maxTasmax
+      )
     )
   }
 

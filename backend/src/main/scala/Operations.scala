@@ -7,18 +7,41 @@ import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io._
 
-import java.time.{ZonedDateTime, ZoneOffset}
+import java.time.{ ZonedDateTime, ZoneOffset }
 
 
 object Operations {
 
-  def main(args: Array[String]) : Unit = {
-    val bucket = "ingested-gddp-data"
-    val prefix = "rcp85_r1i1p1_CanESM2"
-    val as = S3AttributeStore(bucket, prefix)
-    val id = LayerId("rcp85_r1i1p1_CanESM2_benchmark_64_years_temp", 0)
+  type KV = (SpaceTimeKey, MultibandTile)
+  type Dictionary = Map[String, Double]
 
-    val geojsonUri = "./geojson/USA.geo.json"
+  val bucket = "ingested-gddp-data"
+  val prefix = "rcp85_r1i1p1_CanESM2"
+  val as = S3AttributeStore(bucket, prefix)
+  val id = LayerId("rcp85_r1i1p1_CanESM2_benchmark_64_years_temp", 0)
+  val dataset = S3CollectionLayerReader(as)
+
+  def query(
+    startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
+    divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
+    areaToDictionary: MultibandTile => Dictionary,
+    dictionariesToScalers: Seq[Dictionary] => Seq[Double]
+  ): Map[ZonedDateTime, Seq[Double]] = {
+    val collection = dataset
+      .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
+      .where(Intersects(area))
+      .where(Between(startTime, endTime))
+      .result.mask(area)
+
+    divide(collection)
+      .map({ t => (t._1, t._2.map({ kv => areaToDictionary(kv._2) })) })
+      .map({ t => (t._1, dictionariesToScalers(t._2)) })
+      .toMap
+  }
+
+  def main(args: Array[String]) : Unit = {
+
+    val geojsonUri = "./geojson/Los_Angeles.geo.json"
     val polygon =
       scala.io.Source.fromFile(geojsonUri, "UTF-8")
         .getLines
@@ -27,14 +50,16 @@ object Operations {
         .head
     val polygonExtent = polygon.envelope
 
-    val reader = S3CollectionLayerReader(as)
-    val col = reader
+    val col = dataset
       .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
       .where(Intersects(polygon))
-      .where(Between(ZonedDateTime.of(2020, 3, 1, 0, 0, 0, 0, ZoneOffset.UTC), ZonedDateTime.of(2021, 4, 1, 0, 0, 0, 0, ZoneOffset.UTC)))
+      .where(Between(
+        ZonedDateTime.of(2019, 12, 22, 0, 0, 0, 0, ZoneOffset.UTC),
+        ZonedDateTime.of(2020, 6, 21, 0, 0, 0, 0, ZoneOffset.UTC)))
       .result
+      .mask(polygon)
 
-    println("XXX " + col.length)
+    println(col.length)
   }
 
 }

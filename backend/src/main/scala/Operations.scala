@@ -7,7 +7,7 @@ import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io._
 
-import java.time.{ ZonedDateTime, ZoneOffset }
+import java.time.{ ZonedDateTime, ZoneId, ZoneOffset }
 
 
 object Operations {
@@ -20,6 +20,16 @@ object Operations {
   val as = S3AttributeStore(bucket, prefix)
   val id = LayerId("rcp85_r1i1p1_CanESM2_benchmark_64_years_temp", 0)
   val dataset = S3CollectionLayerReader(as)
+
+  def divideByCalendarMonth(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] = {
+    collection.groupBy({ kv =>
+      val time = kv._1.time
+      val year: Int = time.getYear
+      val month: Int = time.getMonth.getValue
+      val zone: ZoneId = time.getZone
+      ZonedDateTime.of(year, month, 1, 0, 0, 0, 0, zone)
+    })
+  }
 
   def query(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
@@ -59,7 +69,7 @@ object Operations {
       .result
       .mask(polygon)
 
-    println(col.length)
+    println(divideByCalendarMonth(col))
   }
 
 }

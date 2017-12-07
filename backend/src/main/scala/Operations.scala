@@ -53,6 +53,14 @@ object Operations {
     Map("tasmin" -> tasmin, "tasmax" -> tasmax)
   }
 
+  def maxTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .map({ d => d.getOrElse("tasmin", throw new Exception) })
+        .reduce({ (a, x) => math.max(a, x) })
+    )
+  }
+
   def query(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],

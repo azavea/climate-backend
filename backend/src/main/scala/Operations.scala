@@ -31,6 +31,28 @@ object Operations {
     })
   }
 
+  def areaToTasminTasmax(area: MultibandTile): Dictionary = {
+    var count: Int = 0
+    var tasmin: Double = 0.0
+    var tasmax: Double = 0.0
+
+    area.band(0).foreachDouble({ z: Double =>
+      if (!isNoData(z)) {
+        count = count + 1
+        tasmin = tasmin + z
+      }
+    })
+    area.band(1).foreachDouble({ z: Double =>
+      if (!isNoData(z)) {
+        tasmax = tasmax + z
+      }
+    })
+    tasmin /= count
+    tasmax /= count
+
+    Map("tasmin" -> tasmin, "tasmax" -> tasmax)
+  }
+
   def query(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
@@ -69,7 +91,10 @@ object Operations {
       .result
       .mask(polygon)
 
-    println(divideByCalendarMonth(col))
+    println(
+      divideByCalendarMonth(col)
+        .map({ t => (t._1, t._2.map({ kv => areaToTasminTasmax(kv._2) })) })
+    )
   }
 
 }

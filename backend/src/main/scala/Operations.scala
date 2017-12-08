@@ -16,8 +16,18 @@ import java.util.concurrent.Executors
 object Operations {
 
   val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors)) // XXX
+  val rng = new scala.util.Random // XXX
+
   type KV = (SpaceTimeKey, MultibandTile)
   type Dictionary = Map[String, Double]
+
+  val geojsonUri = "./geojson/Los_Angeles.geo.json"
+  val polygon =
+    scala.io.Source.fromFile(geojsonUri, "UTF-8")
+      .getLines
+      .mkString
+      .extractGeometries[MultiPolygon]
+      .head
 
   val bucket = "ingested-gddp-data"
   val prefix = "rcp85_r1i1p1_CanESM2"
@@ -122,27 +132,29 @@ object Operations {
       .toMap
   }
 
+  def benchmark(): Unit = {
+    val years = rng.nextInt(20)
+    val startTime = ZonedDateTime.of(2018, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+    val endTime = ZonedDateTime.of(2018+years, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+
+    val beforeMillis = System.currentTimeMillis
+    val collection = query(startTime, endTime, polygon, divideByCalendarMonth, areaToTasminTasmax, maxTasmax)
+    val afterMillis = System.currentTimeMillis
+
+    println(s"${years}, ${afterMillis - beforeMillis}")
+  }
+
   def main(args: Array[String]) : Unit = {
+    val times =
+      if (args.length > 0) args(0).toInt
+      else 1000
+    println(times)
 
-    val geojsonUri = "./geojson/Los_Angeles.geo.json"
-    val polygon =
-      scala.io.Source.fromFile(geojsonUri, "UTF-8")
-        .getLines
-        .mkString
-        .extractGeometries[MultiPolygon]
-        .head
-    val polygonExtent = polygon.envelope
-
-    println(
-      query(
-        ZonedDateTime.of(2019, 12, 22, 0, 0, 0, 0, ZoneOffset.UTC),
-        ZonedDateTime.of(2020, 6, 21, 0, 0, 0, 0, ZoneOffset.UTC),
-        polygon,
-        divideByCalendarMonth,
-        areaToTasminTasmax,
-        maxTasmax
-      )
-    )
+    var i = 0
+    while (i < times) {
+      benchmark
+      i = i + 1
+    }
   }
 
 }

@@ -7,11 +7,15 @@ import geotrellis.spark.io.s3._
 import geotrellis.vector._
 import geotrellis.vector.io._
 
+import scala.concurrent._
+
 import java.time.{ ZonedDateTime, ZoneId, ZoneOffset }
+import java.util.concurrent.Executors
 
 
 object Operations {
 
+  val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors)) // XXX
   type KV = (SpaceTimeKey, MultibandTile)
   type Dictionary = Map[String, Double]
 
@@ -59,6 +63,18 @@ object Operations {
         .map({ d => d.getOrElse("tasmin", throw new Exception) })
         .reduce({ (a, x) => math.max(a, x) })
     )
+  }
+
+  /**
+    * Perform a query, wrap the computation in a future for asynchrony.
+    */
+  def futureQuery(
+    startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
+    divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
+    areaToDictionary: MultibandTile => Dictionary,
+    dictionariesToScalers: Seq[Dictionary] => Seq[Double]
+  ): Future[Map[ZonedDateTime, Seq[Double]]] = {
+    Future{ query(startTime, endTime, area, divide, areaToDictionary, dictionariesToScalers) }(ec)
   }
 
   def query(

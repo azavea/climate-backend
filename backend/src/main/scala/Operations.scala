@@ -35,20 +35,6 @@ object Operations {
   val dataset = S3CollectionLayerReader(as)
 
   /**
-    * An example of the `dictionariesToScalers` lambda from the
-    * `query` function.  Takes a sequence of dictionaries (from a
-    * temporal division) and produces a sequence of (one or more)
-    * scalers.
-    */
-  def maxTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
-    List(
-      dictionaries
-        .map({ d => d.getOrElse("tasmin", throw new Exception) })
-        .reduce({ (a, x) => math.max(a, x) })
-    )
-  }
-
-  /**
     * Perform a query, wrap the computation in a future for
     * asynchrony.
     */
@@ -56,27 +42,27 @@ object Operations {
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: MultibandTile => Dictionary,
-    dictionariesToScalers: Seq[Dictionary] => Seq[Double]
+    box: Seq[Dictionary] => Seq[Double]
   ): Future[Map[ZonedDateTime, Seq[Double]]] = {
-    Future{ query(startTime, endTime, area, divide, narrower, dictionariesToScalers) }(ec)
+    Future{ query(startTime, endTime, area, divide, narrower, box) }(ec)
   }
 
   /**
     * Perform a query.
     *
-    * @param  startTime              The beginning of the temporal search range
-    * @param  endTime                The end of the temporal search range
-    * @param  area                   The spatial search range (given as a multipolygon)
-    * @param  divide                 A function that takes a sequence of (key, tile) pairs a divides it into appropriate temporally-contiguous divisions
-    * @param  narrower               A function that turns an area (a tile) into a dictionary of variables to their values, e.g. Map("tasmin" -> 1, "tasmax" -> 3).
-    * @param  dictionariesToScalers  A function that turns a sequence of dictionaries into a sequence of scalers
-    * @return                        A map from dates to sequences of doubles.  The dates mark the beginnings of temporal divisions and the sequences of one or more scalers are the values derived from the respective chunks.
+    * @param  startTime The beginning of the temporal search range
+    * @param  endTime   The end of the temporal search range
+    * @param  area      The spatial search range (given as a multipolygon)
+    * @param  divide    A function that takes a sequence of (key, tile) pairs a divides it into appropriate temporally-contiguous divisions
+    * @param  narrower  A function that turns an area (a tile) into a dictionary of variables to their values, e.g. Map("tasmin" -> 1, "tasmax" -> 3).
+    * @param  box       A function that turns a sequence of dictionaries into a sequence of scalers
+    * @return           A map from dates to sequences of doubles.  The dates mark the beginnings of temporal divisions and the sequences of one or more scalers are the values derived from the respective chunks.
     */
   def query(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: MultibandTile => Dictionary,
-    dictionariesToScalers: Seq[Dictionary] => Seq[Double]
+    box: Seq[Dictionary] => Seq[Double]
   ): Map[ZonedDateTime, Seq[Double]] = {
     val collection = dataset
       .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
@@ -86,7 +72,7 @@ object Operations {
 
     divide(collection)
       .map({ t => (t._1, t._2.map({ kv => narrower(kv._2) })) })
-      .map({ t => (t._1, dictionariesToScalers(t._2)) })
+      .map({ t => (t._1, box(t._2)) })
       .toMap
   }
 
@@ -97,7 +83,7 @@ object Operations {
       startTime, endTime, polygon,
       Dividers.divideByCalendarMonth,
       Narrowers.byMean,
-      maxTasmax)
+      Boxen.maxTasmax)
 
     println(collection)
   }

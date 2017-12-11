@@ -16,7 +16,6 @@ import java.util.concurrent.Executors
 object Operations {
 
   val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors)) // XXX
-  val rng = new scala.util.Random // XXX
 
   type KV = (SpaceTimeKey, MultibandTile)
   type Dictionary = Map[String, Double]
@@ -132,29 +131,33 @@ object Operations {
       .toMap
   }
 
-  def benchmark(): Unit = {
-    val years = rng.nextInt(20)
-    val startTime = ZonedDateTime.of(2018, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-    val endTime = ZonedDateTime.of(2018+years, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+  // def benchmark(): Unit = {
+  //   val years = rng.nextInt(20)
+  //   val startTime = ZonedDateTime.of(2018, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+  //   val endTime = ZonedDateTime.of(2018+years, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
-    val beforeMillis = System.currentTimeMillis
-    val collection = query(startTime, endTime, polygon, divideByCalendarMonth, areaToTasminTasmax, maxTasmax)
-    val afterMillis = System.currentTimeMillis
+  //   val beforeMillis = System.currentTimeMillis
+  //   val collection = query(
+  //     startTime, endTime, polygon,
+  //     Dividers.divideByCalendarMonth,
+  //     areaToTasminTasmax,
+  //     maxTasmax)
+  //   val afterMillis = System.currentTimeMillis
 
-    println(s"${years}, ${afterMillis - beforeMillis}")
-  }
+  //   println(s"${years}, ${afterMillis - beforeMillis}")
+  // }
 
   def main(args: Array[String]) : Unit = {
-    val times =
-      if (args.length > 0) args(0).toInt
-      else 1000
-    println(times)
+    // val times =
+    //   if (args.length > 0) args(0).toInt
+    //   else 1000
+    // println(times)
 
-    var i = 0
-    while (i < times) {
-      benchmark
-      i = i + 1
-    }
+    // var i = 0
+    // while (i < times) {
+    //   benchmark
+    //   i = i + 1
+    // }
   }
 
 }

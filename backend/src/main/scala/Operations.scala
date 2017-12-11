@@ -35,21 +35,6 @@ object Operations {
   val dataset = S3CollectionLayerReader(as)
 
   /**
-    * An example of the `divide` lambda from the `query` function.
-    * Divides a collection of key-value pairs into month-long
-    * divisions.
-    */
-  def divideByCalendarMonth(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] = {
-    collection.groupBy({ kv =>
-      val time = kv._1.time
-      val year: Int = time.getYear
-      val month: Int = time.getMonth.getValue
-      val zone: ZoneId = time.getZone
-      ZonedDateTime.of(year, month, 1, 0, 0, 0, 0, zone)
-    })
-  }
-
-  /**
     * An example of the `areaToDictionary` lambda from the `query`
     * function.  Converts an area (a tile) into a dictionary of the
     * form Map("tasmin" -> x, "tasmax" -> y).

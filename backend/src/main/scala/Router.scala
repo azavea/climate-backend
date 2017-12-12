@@ -47,8 +47,8 @@ object Router {
 
   def queryRoute =
     parameter("startTime", "endTime") { (_startTime, _endTime) =>
-      val startTime  = ZonedDateTime.parse(_startTime, dateTimeFormat)
-      val endTime = ZonedDateTime.parse(_endTime, dateTimeFormat)
+      val startTime  = ZonedDateTime.parse(_startTime)
+      val endTime = ZonedDateTime.parse(_endTime)
       pathEndOrSingleSlash {
         post {
           entity(as[String]) { json =>

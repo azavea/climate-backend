@@ -76,16 +76,4 @@ object Operations {
       .toMap
   }
 
-  def main(args: Array[String]) : Unit = {
-    val startTime = ZonedDateTime.of(2018, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-    val endTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-    val collection = query(
-      startTime, endTime, polygon,
-      Dividers.divideByCalendarMonth,
-      Narrowers.byMean,
-      Boxen.maxTasmax)
-
-    println(collection)
-  }
-
 }

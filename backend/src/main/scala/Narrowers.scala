@@ -10,32 +10,44 @@ object Narrowers {
 
   /**
     * An example of the `narrower` lambda from the `query` function.
-    * Converts an area (a tile) into a dictionary of the form
+    * Converts an area (some tiles) into a dictionary of the form
     * Map("tasmin" -> x, "tasmax" -> y, "pr" -> z).
     */
-  def byMean(area: MultibandTile): Dictionary = {
+  def byMean(area: Seq[MultibandTile]): Dictionary = {
     var count: Int = 0
     var tasmin: Double = 0.0
     var tasmax: Double = 0.0
+    var pr: Double = 0.0
 
-    area.band(0).foreachDouble({ z: Double =>
-      if (!isNoData(z)) {
-        count = count + 1
-        tasmin = tasmin + z
-      }
+    area.foreach({ tile =>
+      tile.band(0).foreachDouble({ z: Double =>
+        if (!isNoData(z)) {
+          count = count + 1
+          tasmin = tasmin + z
+        }
+      })
+
+      tile.band(1).foreachDouble({ z: Double =>
+        if (!isNoData(z)) {
+          tasmax = tasmax + z
+        }
+      })
+
+      tile.band(2).foreachDouble({ z: Double =>
+        if (!isNoData(z)) {
+          pr = pr + z
+        }
+      })
     })
-    area.band(1).foreachDouble({ z: Double =>
-      if (!isNoData(z)) {
-        tasmax = tasmax + z
-      }
-    })
+
     tasmin /= count
     tasmax /= count
+    pr /= count
 
     Map(
       "tasmin" -> tasmin,
       "tasmax" -> tasmax,
-      "pr" -> Double.NaN // XXX
+      "pr" -> pr
     )
   }
 

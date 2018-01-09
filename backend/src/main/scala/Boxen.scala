@@ -15,7 +15,11 @@ object Boxen {
     List(
       dictionaries
         .map({ d => d.getOrElse("tasmin", throw new Exception) })
-        .reduce({ (a, x) => math.max(a, x) })
+        .reduce({ (a, x) =>
+          if (x.isNaN && !a.isNaN) a
+          else if (!x.isNaN && a.isNaN) x
+          else math.max(a, x)
+        })
     )
   }
 

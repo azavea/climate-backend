@@ -31,7 +31,7 @@ object Operations {
   val bucket = "ingested-gddp-data"
   val prefix = "rcp85_r1i1p1_CanESM2"
   val as = S3AttributeStore(bucket, prefix)
-  val id = LayerId("rcp85_r1i1p1_CanESM2_benchmark_64_years_temp", 0)
+  val id = LayerId("rcp85_r1i1p1_CanESM2-4x4", 0)
   val dataset = S3CollectionLayerReader(as)
 
   /**

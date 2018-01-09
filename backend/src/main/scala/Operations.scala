@@ -41,7 +41,7 @@ object Operations {
   def futureQuery(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
-    narrower: MultibandTile => Dictionary,
+    narrower: Seq[MultibandTile] => Dictionary,
     box: Seq[Dictionary] => Seq[Double]
   ): Future[Map[ZonedDateTime, Seq[Double]]] = {
     Future{ query(startTime, endTime, area, divide, narrower, box) }(ec)
@@ -54,14 +54,14 @@ object Operations {
     * @param  endTime   The end of the temporal search range
     * @param  area      The spatial search range (given as a multipolygon)
     * @param  divide    A function that takes a sequence of (key, tile) pairs a divides it into appropriate temporally-contiguous divisions
-    * @param  narrower  A function that turns an area (a tile) into a dictionary of variables to their values, e.g. Map("tasmin" -> 1, "tasmax" -> 3).
+    * @param  narrower  A function that turns an area (some tiles) into a dictionary of variables to their values, e.g. Map("tasmin" -> 1, "tasmax" -> 3).
     * @param  box       A function that turns a sequence of dictionaries into a sequence of scalers
     * @return           A map from dates to sequences of doubles.  The dates mark the beginnings of temporal divisions and the sequences of one or more scalers are the values derived from the respective chunks.
     */
   def query(
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
-    narrower: MultibandTile => Dictionary,
+    narrower: Seq[MultibandTile] => Dictionary,
     box: Seq[Dictionary] => Seq[Double]
   ): Map[ZonedDateTime, Seq[Double]] = {
     val collection = dataset
@@ -71,8 +71,28 @@ object Operations {
       .result.mask(area)
 
     divide(collection)
-      .map({ t => (t._1, t._2.map({ kv => narrower(kv._2) })) })
-      .map({ t => (t._1, box(t._2)) })
+      .map({ pair =>
+        val zdt: ZonedDateTime = pair._1
+        val kvs: Seq[KV] = pair._2
+        val group = kvs.groupBy({ kv => kv._1 })
+        (zdt, group)
+      })
+      .map({ pair =>
+        val zdt: ZonedDateTime = pair._1
+        val m: Map[SpaceTimeKey, Seq[KV]] = pair._2
+        val narrowed = m.map({ pair =>
+          val kvs: Seq[KV] = pair._2
+          val vs = kvs.map({ kv => kv._2 })
+          narrower(vs)
+        }).toList
+        (zdt, narrowed)
+      })
+      .map({ pair =>
+        val zdt: ZonedDateTime = pair._1
+        val ds: Seq[Dictionary] = pair._2
+        val scalers = box(ds)
+        (zdt, scalers)
+      })
       .toMap
   }
 

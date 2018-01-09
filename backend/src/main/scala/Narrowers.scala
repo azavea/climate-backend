@@ -17,6 +17,7 @@ object Narrowers {
     var count: Int = 0
     var tasmin: Double = 0.0
     var tasmax: Double = 0.0
+    var pr: Double = 0.0
 
     area.foreach({ tile =>
       tile.band(0).foreachDouble({ z: Double =>
@@ -25,20 +26,28 @@ object Narrowers {
           tasmin = tasmin + z
         }
       })
+
       tile.band(1).foreachDouble({ z: Double =>
         if (!isNoData(z)) {
           tasmax = tasmax + z
+        }
+      })
+
+      tile.band(2).foreachDouble({ z: Double =>
+        if (!isNoData(z)) {
+          pr = pr + z
         }
       })
     })
 
     tasmin /= count
     tasmax /= count
+    pr /= count
 
     Map(
       "tasmin" -> tasmin,
       "tasmax" -> tasmax,
-      "pr" -> Double.NaN // XXX
+      "pr" -> pr
     )
   }
 

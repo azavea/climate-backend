@@ -35,7 +35,16 @@ object Router {
       startTime, endTime, area,
       Dividers.divideByCalendarMonth,
       Narrowers.byMean,
-      Boxen.maxTasmax
+      Boxen.maxTasmin
+    ).map({ f =>
+      f.map({ case (_k, _v) =>
+        val k = _k.format(dateTimeFormat)
+        val v = _v.toList
+        k -> v
+      }).toJson
+    })
+  }
+
     ).map({ f =>
       f.map({ case (_k, _v) =>
         val k = _k.format(dateTimeFormat)

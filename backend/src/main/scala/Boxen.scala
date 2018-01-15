@@ -11,7 +11,7 @@ object Boxen {
     * takes a sequence of dictionaries (a temporal division) and
     * produces a sequence of (one element lists of) scalers.
     */
-  def maxTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
+  def maxTasmin(dictionaries: Seq[Dictionary]): Seq[Double] = {
     List(
       dictionaries
         .map({ d => d.getOrElse("tasmin", throw new Exception) })

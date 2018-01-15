@@ -30,25 +30,11 @@ object Router {
       allowedMethods = scala.collection.immutable.Seq(GET, POST, PUT, HEAD, OPTIONS, DELETE)
     )
 
-  def vanilla(startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon) = {
-    Operations.futureQuery(
-      startTime, endTime, area,
-      Dividers.divideByCalendarMonth,
-      Narrowers.byMean,
-      Boxen.maxTasmin
-    ).map({ f =>
-      f.map({ case (_k, _v) =>
-        val k = _k.format(dateTimeFormat)
-        val v = _v.toList
-        k -> v
-      }).toJson
-    })
-  }
-
   def arrayIndicator = {
-    parameter("box", "startTime", "endTime", "divider" ?) { (_box, _startTime, _endTime, _divider) =>
+    parameter("box" ?, "startTime", "endTime", "divider" ?) { (_box, _startTime, _endTime, _divider) =>
       val box: Seq[Operations.Dictionary] => Seq[Double] = _box match {
-        case "averageTasmax" => Boxen.averageTasmax
+        case Some("averageTasmax") => Boxen.averageTasmax
+        case Some("maxTasmin") => Boxen.maxTasmin
         case _ => Boxen.maxTasmin
       }
       val startTime  = ZonedDateTime.parse(_startTime)
@@ -56,7 +42,8 @@ object Router {
       val divider: Seq[Operations.KV] => Map[ZonedDateTime, Seq[Operations.KV]] = _divider match {
         case Some("month") => Dividers.divideByCalendarMonth
         case Some("year") => Dividers.divideByCalendarYear
-        case _ => Dividers.divideByInfinity
+        case Some("infinity") => Dividers.divideByInfinity
+        case _ => Dividers.divideByCalendarMonth
       }
 
       pathEndOrSingleSlash {
@@ -79,10 +66,7 @@ object Router {
               })
             }
 
-          }
-        }
-      }
-    }
+          }}}}
   }
 
   def routes() =

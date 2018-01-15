@@ -28,4 +28,13 @@ object Boxen {
     List(tasmaxen.sum / tasmaxen.length)
   }
 
+  def extremePrecipitationEvents(baseline: Double)(dictionaries: Seq[Dictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .map({ d => d.getOrElse("pr", throw new Exception) })
+        .filter({ pr => pr > baseline })
+        .length
+    )
+  }
+
 }

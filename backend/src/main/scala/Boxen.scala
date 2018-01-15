@@ -23,4 +23,9 @@ object Boxen {
     )
   }
 
+  def averageTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
+    val tasmaxen = dictionaries.map({ d => d.getOrElse("tasmax", throw new Exception) })
+    List(tasmaxen.sum / tasmaxen.length)
+  }
+
 }

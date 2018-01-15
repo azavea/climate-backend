@@ -8,6 +8,11 @@ import java.time.{ ZonedDateTime, ZoneId, ZoneOffset }
 
 object Dividers {
 
+  def divideByInfinity(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] =  {
+    val time = collection.map({ kv => kv._1.time }).sortBy({ k => k.toEpochSecond }).head
+    Map(time -> collection)
+  }
+
   /**
     * An example of the `divide` lambda from the `query` function.
     * Divides a collection of key-value pairs into month-long

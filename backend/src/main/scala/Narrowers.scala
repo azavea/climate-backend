@@ -36,22 +36,22 @@ object Narrowers {
         }
       })
 
-      tile.band(2).foreachDouble({ z: Double =>
-        if (!isNoData(z)) {
-          count3 = count3 + 1
-          pr = pr + z
-        }
-      })
+    //   tile.band(2).foreachDouble({ z: Double =>
+    //     if (!isNoData(z)) {
+    //       count3 = count3 + 1
+    //       pr = pr + z
+    //     }
+    //   })
     })
 
     tasmin /= count1
     tasmax /= count2
-    pr /= count3
+    // pr /= count3
 
     Map(
       "tasmin" -> tasmin,
       "tasmax" -> tasmax,
-      "pr" -> pr
+      "pr" -> 0
     )
   }
 

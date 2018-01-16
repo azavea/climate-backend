@@ -2,33 +2,29 @@ package com.azavea.climate
 
 import Operations.KV
 import Operations.Dictionary
+import Operations.TimedDictionary
 
 
 object Boxen {
 
-  def maxTasmin(dictionaries: Seq[Dictionary]): Seq[Double] = {
+  def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     List(
       dictionaries
-        .map({ d => d.getOrElse("tasmin", throw new Exception) })
-        .reduce({ (a, x) =>
-          if (x.isNaN && !a.isNaN) a
-          else if (!x.isNaN && a.isNaN) x
-          else math.max(a, x)
-        })
+        .map({ case (_, d) => d.getOrElse("tasmin", throw new Exception) })
+        .reduce({ (a, x) => math.max(a, x) })
     )
   }
 
-  def averageTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
+  def averageTasmax(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     val tasmaxen = dictionaries
-      .map({ d => d.getOrElse("tasmax", throw new Exception) })
-      .filter({ t => !t.isNaN })
+      .map({ case (_, d) => d.getOrElse("tasmax", throw new Exception) })
     List(tasmaxen.sum / tasmaxen.length)
   }
 
-  def extremePrecipitationEvents(baseline: Double)(dictionaries: Seq[Dictionary]): Seq[Double] = {
+  def extremePrecipitationEvents(baseline: Double)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     List(
       dictionaries
-        .map({ d => d.getOrElse("pr", throw new Exception) })
+        .map({ case (_, d) => d.getOrElse("pr", throw new Exception) })
         .filter({ pr => pr > baseline })
         .length
     )
@@ -45,8 +41,8 @@ object Boxen {
     }
   }
 
-  def heatWaveDurationIndex(baseline: Double)(dictionaries: Seq[Dictionary]): Seq[Double] = {
-    val ts = dictionaries.map({ d => d.getOrElse("tasmax", throw new Exception) })
+  def heatWaveDurationIndex(baseline: Double)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val ts = dictionaries.map({ case (_, d) => d.getOrElse("tasmax", throw new Exception) })
 
     spans(ts, { temp: Double => temp > baseline }).map(_.length.toDouble)
   }

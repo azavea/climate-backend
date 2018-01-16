@@ -20,6 +20,10 @@ import java.time.{ZonedDateTime, ZoneOffset}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
+import Operations.KV
+import Operations.Dictionary
+import Operations.TimedDictionary
+
 
 object Router {
 
@@ -34,14 +38,14 @@ object Router {
 
   def arrayIndicator = {
     parameter("box" ?, "startTime", "endTime", "divider" ?) { (_box, _startTime, _endTime, _divider) =>
-      val box: Seq[Operations.Dictionary] => Seq[Double] = _box match {
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
         case Some("averageTasmax") => Boxen.averageTasmax
         case Some("maxTasmin") => Boxen.maxTasmin
         case _ => Boxen.maxTasmin
       }
       val startTime  = ZonedDateTime.parse(_startTime)
       val endTime = ZonedDateTime.parse(_endTime)
-      val divider: Seq[Operations.KV] => Map[ZonedDateTime, Seq[Operations.KV]] = _divider match {
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
         case Some("month") => Dividers.divideByCalendarMonth
         case Some("year") => Dividers.divideByCalendarYear
         case Some("infinity") => Dividers.divideByInfinity
@@ -76,13 +80,13 @@ object Router {
   def arrayBaselineIndicator = {
     parameter("box", "startTime", "endTime", "divider" ?, "baseline") { (_box, _startTime, _endTime, _divider, _baseline) =>
       val baseline = _baseline.toDouble
-      val box: Seq[Operations.Dictionary] => Seq[Double] = _box match {
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
         case "extremePrecipitationEvents" => Boxen.extremePrecipitationEvents(baseline)
         case _ => throw new Exception
       }
       val startTime  = ZonedDateTime.parse(_startTime)
       val endTime = ZonedDateTime.parse(_endTime)
-      val divider: Seq[Operations.KV] => Map[ZonedDateTime, Seq[Operations.KV]] = _divider match {
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
         case Some("month") => Dividers.divideByCalendarMonth
         case Some("year") => Dividers.divideByCalendarYear
         case Some("infinity") => Dividers.divideByInfinity
@@ -117,13 +121,13 @@ object Router {
   def arrayPredicateIndicator = {
     parameter("box", "startTime", "endTime", "divider" ?, "baseline") { (_box, _startTime, _endTime, _divider, _baseline) =>
       val baseline = _baseline.toDouble
-      val box: Seq[Operations.Dictionary] => Seq[Double] = _box match {
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
         case "heatWaveDurationIndex" => Boxen.heatWaveDurationIndex(baseline)
         case _ => throw new Exception
       }
       val startTime  = ZonedDateTime.parse(_startTime)
       val endTime = ZonedDateTime.parse(_endTime)
-      val divider: Seq[Operations.KV] => Map[ZonedDateTime, Seq[Operations.KV]] = _divider match {
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
         case Some("month") => Dividers.divideByCalendarMonth
         case Some("year") => Dividers.divideByCalendarYear
         case Some("infinity") => Dividers.divideByInfinity

@@ -19,6 +19,7 @@ object Operations {
 
   type KV = (SpaceTimeKey, MultibandTile)
   type Dictionary = Map[String, Double]
+  type TimedDictionary = (ZonedDateTime, Dictionary)
 
   val geojsonUri = "./geojson/Los_Angeles.geo.json"
   val polygon =
@@ -42,7 +43,7 @@ object Operations {
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: Seq[MultibandTile] => Dictionary,
-    box: Seq[Dictionary] => Seq[Double]
+    box: Seq[TimedDictionary] => Seq[Double]
   ): Future[Map[ZonedDateTime, Seq[Double]]] = {
     Future{ query(startTime, endTime, area, divide, narrower, box) }(ec)
   }
@@ -62,7 +63,7 @@ object Operations {
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: Seq[MultibandTile] => Dictionary,
-    box: Seq[Dictionary] => Seq[Double]
+    box: Seq[TimedDictionary] => Seq[Double]
   ): Map[ZonedDateTime, Seq[Double]] = {
     val collection = dataset
       .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
@@ -91,7 +92,7 @@ object Operations {
       }) // map of zoned date times to sequences of dictionaries
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
-        val ds: Seq[(ZonedDateTime, Dictionary)] = pair._2
+        val ds: Seq[TimedDictionary] = pair._2
         val scalers = box(ds)
         (zdt, scalers)
       })

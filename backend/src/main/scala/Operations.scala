@@ -21,14 +21,6 @@ object Operations {
   type Dictionary = Map[String, Double]
   type TimedDictionary = (ZonedDateTime, Dictionary)
 
-  val geojsonUri = "./geojson/Los_Angeles.geo.json"
-  val polygon =
-    scala.io.Source.fromFile(geojsonUri, "UTF-8")
-      .getLines
-      .mkString
-      .extractGeometries[MultiPolygon]
-      .head
-
   val bucket = "ingested-gddp-data"
   val prefix = "rcp85_r1i1p1_CanESM2"
   val as = S3AttributeStore(bucket, prefix)

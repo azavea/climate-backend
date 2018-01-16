@@ -70,26 +70,28 @@ object Operations {
       .where(Between(startTime, endTime))
       .result.mask(area)
 
-    divide(collection)
+    divide(collection) // map of zoned date times to sequences of key-value pairs
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
         val kvs: Seq[KV] = pair._2
-        val group = kvs.groupBy({ kv => kv._1 })
+        val group = kvs.groupBy({ kv => kv._1.time })
         (zdt, group)
-      })
+      }) // map of zoned date times to maps of zoned date times to sequences of key-value pairs
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
-        val m: Map[SpaceTimeKey, Seq[KV]] = pair._2
+        val m: Map[ZonedDateTime, Seq[KV]] = pair._2
         val narrowed = m.map({ pair =>
+          val zdt2: ZonedDateTime = pair._1
           val kvs: Seq[KV] = pair._2
           val vs = kvs.map({ kv => kv._2 })
-          narrower(vs)
-        }).toList
+          (zdt2, narrower(vs))
+        })
+        .toList.sortBy({ pair => pair._1.toEpochSecond })
         (zdt, narrowed)
-      })
+      }) // map of zoned date times to sequences of dictionaries
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
-        val ds: Seq[Dictionary] = pair._2
+        val ds: Seq[(ZonedDateTime, Dictionary)] = pair._2
         val scalers = box(ds)
         (zdt, scalers)
       })

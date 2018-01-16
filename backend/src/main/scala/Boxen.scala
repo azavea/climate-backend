@@ -19,7 +19,9 @@ object Boxen {
   }
 
   def averageTasmax(dictionaries: Seq[Dictionary]): Seq[Double] = {
-    val tasmaxen = dictionaries.map({ d => d.getOrElse("tasmax", throw new Exception) })
+    val tasmaxen = dictionaries
+      .map({ d => d.getOrElse("tasmax", throw new Exception) })
+      .filter({ t => !t.isNaN })
     List(tasmaxen.sum / tasmaxen.length)
   }
 
@@ -30,6 +32,23 @@ object Boxen {
         .filter({ pr => pr > baseline })
         .length
     )
+  }
+
+  private def spans[X](xs: Seq[X], pred: X => Boolean): Seq[Seq[X]] = {
+    if (xs.length == 0)
+      return List()
+    else if (!pred(xs.head))
+      return spans(xs.drop(1),pred)
+    else {
+      val (a, b)  = xs.span(pred)
+      return List(a) ++ spans(b, pred)
+    }
+  }
+
+  def heatWaveDurationIndex(baseline: Double)(dictionaries: Seq[Dictionary]): Seq[Double] = {
+    val ts = dictionaries.map({ d => d.getOrElse("tasmax", throw new Exception) })
+
+    spans(ts, { temp: Double => temp > baseline }).map(_.length.toDouble)
   }
 
 }

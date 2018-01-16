@@ -114,10 +114,52 @@ object Router {
 
   // ---------------------------------
 
+  def arrayPredicateIndicator = {
+    parameter("box", "startTime", "endTime", "divider" ?, "baseline") { (_box, _startTime, _endTime, _divider, _baseline) =>
+      val baseline = _baseline.toDouble
+      val box: Seq[Operations.Dictionary] => Seq[Double] = _box match {
+        case "heatWaveDurationIndex" => Boxen.heatWaveDurationIndex(baseline)
+        case _ => throw new Exception
+      }
+      val startTime  = ZonedDateTime.parse(_startTime)
+      val endTime = ZonedDateTime.parse(_endTime)
+      val divider: Seq[Operations.KV] => Map[ZonedDateTime, Seq[Operations.KV]] = _divider match {
+        case Some("month") => Dividers.divideByCalendarMonth
+        case Some("year") => Dividers.divideByCalendarYear
+        case Some("infinity") => Dividers.divideByInfinity
+        case _ => Dividers.divideByCalendarMonth
+      }
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                divider,
+                Narrowers.byMean,
+                box
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}}
+  }
+
+  // ---------------------------------
+
   def routes() =
     cors(settings) {
       pathPrefix("arrayIndicator") { arrayIndicator } ~
-      pathPrefix("arrayBaselineIndicator") { arrayBaselineIndicator }
+      pathPrefix("arrayBaselineIndicator") { arrayBaselineIndicator } ~
+      pathPrefix("arrayPredicateIndicator") { arrayPredicateIndicator }
     }
 
 }

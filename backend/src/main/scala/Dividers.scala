@@ -9,10 +9,10 @@ import java.time.{ ZonedDateTime, ZoneId, ZoneOffset }
 object Dividers {
 
   def divideByInfinity(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] =  {
-    val sorted = collection
+    val time = collection
       .sortBy({ kv => kv._1.time.toEpochSecond })
-    val time = (sorted.head)._1.time
-    Map(time -> sorted)
+      .head._1.time
+    Map(time -> collection)
   }
 
   /**
@@ -28,8 +28,7 @@ object Dividers {
       val zone: ZoneId = time.getZone
       ZonedDateTime.of(year, month, 1, 0, 0, 0, 0, zone)
     })
-      .map({ case (zdt, kvs) =>
-        zdt -> kvs.sortBy({ kv => kv._1.time.toEpochSecond }) })
+      .map({ case (zdt, kvs) => zdt -> kvs })
   }
 
   /**
@@ -44,8 +43,7 @@ object Dividers {
       val zone: ZoneId = time.getZone
       ZonedDateTime.of(year, 1, 1, 0, 0, 0, 0, zone)
     })
-      .map({ case (zdt, kvs) =>
-        zdt -> kvs.sortBy({ kv => kv._1.time.toEpochSecond }) })
+      .map({ case (zdt, kvs) => zdt -> kvs })
   }
 
 }

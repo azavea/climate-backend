@@ -9,8 +9,10 @@ import java.time.{ ZonedDateTime, ZoneId, ZoneOffset }
 object Dividers {
 
   def divideByInfinity(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] =  {
-    val time = collection.map({ kv => kv._1.time }).sortBy({ k => k.toEpochSecond }).head
-    Map(time -> collection)
+    val sorted = collection
+      .sortBy({ kv => kv._1.time.toEpochSecond })
+    val time = (sorted.head)._1.time
+    Map(time -> sorted)
   }
 
   /**
@@ -26,6 +28,8 @@ object Dividers {
       val zone: ZoneId = time.getZone
       ZonedDateTime.of(year, month, 1, 0, 0, 0, 0, zone)
     })
+      .map({ case (zdt, kvs) =>
+        zdt -> kvs.sortBy({ kv => kv._1.time.toEpochSecond }) })
   }
 
   /**
@@ -40,18 +44,8 @@ object Dividers {
       val zone: ZoneId = time.getZone
       ZonedDateTime.of(year, 1, 1, 0, 0, 0, 0, zone)
     })
+      .map({ case (zdt, kvs) =>
+        zdt -> kvs.sortBy({ kv => kv._1.time.toEpochSecond }) })
   }
-
-  // /**
-  //   * This function can be partially-applied to produce a divider of
-  //   * any number of days (which does not respect calendar months,
-  //   * years, &c).
-  //   */
-  // def divideByDays(days: Int)(collection: Seq[KV]): Map[ZonedDateTime, Seq[KV]] = {
-  //   collection.sortBy({ kv => kv._1.time.toInstant.getEpochSecond })
-  //     .grouped(days)
-  //     .map({ seq => seq.head._1.time -> seq })
-  //     .toMap
-  // }
 
 }

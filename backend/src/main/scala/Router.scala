@@ -158,12 +158,71 @@ object Router {
   }
 
   // ---------------------------------
+  val rng = scala.util.Random
+
+  def s3month = {
+      val startTime  = ZonedDateTime.parse("2018-01-01T00:00:00Z").plusMonths(rng.nextInt(70*12))
+      val endTime = startTime.plusMonths(1)
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                Dividers.divideByCalendarMonth,
+                Narrowers.byMean,
+                Boxen.maxTasmin
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}
+  }
+
+  def s3year = {
+      val startTime  = ZonedDateTime.parse("2018-01-01T00:00:00Z").plusMonths(rng.nextInt(70*12))
+      val endTime = startTime.plusYears(1)
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                Dividers.divideByCalendarMonth,
+                Narrowers.byMean,
+                Boxen.maxTasmin
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}
+  }
+
+  // ---------------------------------
 
   def routes() =
     cors(settings) {
       pathPrefix("arrayIndicator") { arrayIndicator } ~
       pathPrefix("arrayBaselineIndicator") { arrayBaselineIndicator } ~
-      pathPrefix("arrayPredicateIndicator") { arrayPredicateIndicator }
+      pathPrefix("arrayPredicateIndicator") { arrayPredicateIndicator } ~
+      pathPrefix("s3month") { s3month } ~
+      pathPrefix("s3year") { s3month }
     }
 
 }

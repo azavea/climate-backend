@@ -19,14 +19,7 @@ object Operations {
 
   type KV = (SpaceTimeKey, MultibandTile)
   type Dictionary = Map[String, Double]
-
-  val geojsonUri = "./geojson/Los_Angeles.geo.json"
-  val polygon =
-    scala.io.Source.fromFile(geojsonUri, "UTF-8")
-      .getLines
-      .mkString
-      .extractGeometries[MultiPolygon]
-      .head
+  type TimedDictionary = (ZonedDateTime, Dictionary)
 
   val bucket = "ingested-gddp-data"
   val prefix = "rcp85_r1i1p1_CanESM2"
@@ -42,7 +35,7 @@ object Operations {
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: Seq[MultibandTile] => Dictionary,
-    box: Seq[Dictionary] => Seq[Double]
+    box: Seq[TimedDictionary] => Seq[Double]
   ): Future[Map[ZonedDateTime, Seq[Double]]] = {
     Future{ query(startTime, endTime, area, divide, narrower, box) }(ec)
   }
@@ -62,7 +55,7 @@ object Operations {
     startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon,
     divide: Seq[KV] => Map[ZonedDateTime, Seq[KV]],
     narrower: Seq[MultibandTile] => Dictionary,
-    box: Seq[Dictionary] => Seq[Double]
+    box: Seq[TimedDictionary] => Seq[Double]
   ): Map[ZonedDateTime, Seq[Double]] = {
     val collection = dataset
       .query[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
@@ -70,26 +63,28 @@ object Operations {
       .where(Between(startTime, endTime))
       .result.mask(area)
 
-    divide(collection)
+    divide(collection) // map of zoned date times to sequences of key-value pairs
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
         val kvs: Seq[KV] = pair._2
-        val group = kvs.groupBy({ kv => kv._1 })
+        val group = kvs.groupBy({ kv => kv._1.time })
         (zdt, group)
-      })
+      }) // map of zoned date times to maps of zoned date times to sequences of key-value pairs
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
-        val m: Map[SpaceTimeKey, Seq[KV]] = pair._2
+        val m: Map[ZonedDateTime, Seq[KV]] = pair._2
         val narrowed = m.map({ pair =>
+          val zdt2: ZonedDateTime = pair._1
           val kvs: Seq[KV] = pair._2
           val vs = kvs.map({ kv => kv._2 })
-          narrower(vs)
-        }).toList
+          (zdt2, narrower(vs))
+        })
+        .toList.sortBy({ pair => pair._1.toEpochSecond })
         (zdt, narrowed)
-      })
+      }) // map of zoned date times to sequences of dictionaries
       .map({ pair =>
         val zdt: ZonedDateTime = pair._1
-        val ds: Seq[Dictionary] = pair._2
+        val ds: Seq[TimedDictionary] = pair._2
         val scalers = box(ds)
         (zdt, scalers)
       })

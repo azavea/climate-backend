@@ -20,6 +20,10 @@ import java.time.{ZonedDateTime, ZoneOffset}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
+import Operations.KV
+import Operations.Dictionary
+import Operations.TimedDictionary
+
 
 object Router {
 
@@ -30,38 +34,195 @@ object Router {
       allowedMethods = scala.collection.immutable.Seq(GET, POST, PUT, HEAD, OPTIONS, DELETE)
     )
 
-  def vanilla(startTime: ZonedDateTime, endTime: ZonedDateTime, area: MultiPolygon) = {
-    Operations.futureQuery(
-      startTime, endTime, area,
-      Dividers.divideByCalendarMonth,
-      Narrowers.byMean,
-      Boxen.maxTasmax
-    ).map({ f =>
-      f.map({ case (_k, _v) =>
-        val k = _k.format(dateTimeFormat)
-        val v = _v.toList
-        k -> v
-      }).toJson
-    })
-  }
+  // ---------------------------------
 
-  def queryRoute =
-    parameter("startTime", "endTime") { (_startTime, _endTime) =>
+  def arrayIndicator = {
+    parameter("box" ?, "startTime", "endTime", "divider" ?) { (_box, _startTime, _endTime, _divider) =>
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
+        case Some("averageTasmax") => Boxen.averageTasmax
+        case Some("maxTasmin") => Boxen.maxTasmin
+        case _ => Boxen.maxTasmin
+      }
       val startTime  = ZonedDateTime.parse(_startTime)
       val endTime = ZonedDateTime.parse(_endTime)
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
+        case Some("month") => Dividers.divideByCalendarMonth
+        case Some("year") => Dividers.divideByCalendarYear
+        case Some("infinity") => Dividers.divideByInfinity
+        case _ => Dividers.divideByCalendarMonth
+      }
+
       pathEndOrSingleSlash {
         post {
           entity(as[String]) { json =>
             val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
-            complete { vanilla(startTime, endTime, area) }
-          }
-        }
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                divider,
+                Narrowers.byMean,
+                box
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}}
+  }
+
+  // ---------------------------------
+
+  def arrayBaselineIndicator = {
+    parameter("box", "startTime", "endTime", "divider" ?, "baseline") { (_box, _startTime, _endTime, _divider, _baseline) =>
+      val baseline = _baseline.toDouble
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
+        case "extremePrecipitationEvents" => Boxen.extremePrecipitationEvents(baseline)
+        case _ => throw new Exception
       }
-    }
+      val startTime  = ZonedDateTime.parse(_startTime)
+      val endTime = ZonedDateTime.parse(_endTime)
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
+        case Some("month") => Dividers.divideByCalendarMonth
+        case Some("year") => Dividers.divideByCalendarYear
+        case Some("infinity") => Dividers.divideByInfinity
+        case _ => Dividers.divideByCalendarMonth
+      }
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                divider,
+                Narrowers.byMean,
+                box
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}}
+  }
+
+  // ---------------------------------
+
+  def arrayPredicateIndicator = {
+    parameter("box", "startTime", "endTime", "divider" ?, "baseline") { (_box, _startTime, _endTime, _divider, _baseline) =>
+      val baseline = _baseline.toDouble
+      val box: Seq[TimedDictionary] => Seq[Double] = _box match {
+        case "heatWaveDurationIndex" => Boxen.heatWaveDurationIndex(baseline)
+        case _ => throw new Exception
+      }
+      val startTime  = ZonedDateTime.parse(_startTime)
+      val endTime = ZonedDateTime.parse(_endTime)
+      val divider: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divider match {
+        case Some("month") => Dividers.divideByCalendarMonth
+        case Some("year") => Dividers.divideByCalendarYear
+        case Some("infinity") => Dividers.divideByInfinity
+        case _ => Dividers.divideByCalendarMonth
+      }
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                divider,
+                Narrowers.byMean,
+                box
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}}
+  }
+
+  // ---------------------------------
+  val rng = scala.util.Random
+
+  def s3month = {
+      val startTime  = ZonedDateTime.parse("2018-01-01T00:00:00Z").plusMonths(rng.nextInt(70*12))
+      val endTime = startTime.plusMonths(1)
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                Dividers.divideByCalendarMonth,
+                Narrowers.byMean,
+                Boxen.maxTasmin
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}
+  }
+
+  def s3year = {
+      val startTime  = ZonedDateTime.parse("2018-01-01T00:00:00Z").plusMonths(rng.nextInt(70*12))
+      val endTime = startTime.plusYears(1)
+
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+
+            complete {
+              Operations.futureQuery(
+                startTime, endTime, area,
+                Dividers.divideByCalendarMonth,
+                Narrowers.byMean,
+                Boxen.maxTasmin
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
+
+          }}}
+  }
+
+  // ---------------------------------
 
   def routes() =
     cors(settings) {
-      pathPrefix("query") { queryRoute }
+      pathPrefix("arrayIndicator") { arrayIndicator } ~
+      pathPrefix("arrayBaselineIndicator") { arrayBaselineIndicator } ~
+      pathPrefix("arrayPredicateIndicator") { arrayPredicateIndicator } ~
+      pathPrefix("s3month") { s3month } ~
+      pathPrefix("s3year") { s3month }
     }
 
 }

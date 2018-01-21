@@ -34,7 +34,7 @@ object Router {
       allowedMethods = scala.collection.immutable.Seq(GET, POST, PUT, HEAD, OPTIONS, DELETE)
     )
 
-  def getPredicate(_predicate: Option[String]): TimedDictionary => Boolean = {
+  def getPredicate2(_predicate: Option[String]): Double => TimedDictionary => Boolean = {
     _predicate match {
       case Some(predicate) =>
         val operation =
@@ -49,19 +49,32 @@ object Router {
           case "pr" => "pr"
           case _ => throw new Exception("No such variable")
         }
-        val y = predicate.split(operation).drop(1).head.trim.toDouble
-
-        // Predicate Function
-        { td: TimedDictionary =>
-          val x = td._2.getOrElse("variable", throw new Exception)
+        { y: Double => td: TimedDictionary =>
+          val x = td._2.getOrElse(variable, throw new Exception)
           operation match {
             case ">=" => x >= y
             case "<=" => x <= y
             case ">" => x > y
             case "<" => x < y
-            case _ => throw new Exception("No such operation (you shouldn't be seening this)")
+            case _ => throw new Exception("No such operation (you shouldn't be seeing this)")
           }
         }
+      case None =>
+        { _: Double => _: TimedDictionary => true }
+    }
+  }
+
+  def getPredicate1(_predicate: Option[String]): TimedDictionary => Boolean = {
+    _predicate match {
+      case Some(predicate) =>
+        val operation =
+          if (predicate contains ">=") ">="
+          else if (predicate contains "<=") "<="
+          else if (predicate contains ">") ">"
+          else if (predicate contains "<") "<"
+          else throw new Exception("No such operation")
+        val y = predicate.split(operation).drop(1).head.trim.toDouble
+        getPredicate2(_predicate)(y)
       case None => { td: TimedDictionary => true }
     }
   }
@@ -100,12 +113,13 @@ object Router {
         case "year" => Dividers.divideByCalendarYear
         case "infinity" => Dividers.divideByInfinity
       }
-      lazy val predicate: TimedDictionary => Boolean = getPredicate(_predicate)
-      val variable: String = getVariable(_predicate, _variable)
+      lazy val predicate1: TimedDictionary => Boolean = getPredicate1(_predicate)
+      lazy val predicate2: Double => TimedDictionary => Boolean = getPredicate2(_predicate)
+      lazy val variable: String = getVariable(_predicate, _variable)
       val box: Seq[TimedDictionary] => Seq[Double] = _operation match {
-        case "maxTemperatureThreshold" | "minTempertureThreshold" | "precipitationThreshold" => Boxen.count(predicate)
-        case "averageHighTemperature" => Boxen.average(predicate, "tasmax")
-        case "averageLowTemperture" => Boxen.average(predicate, "tasmin")
+        case "maxTemperatureThreshold" | "minTempertureThreshold" | "precipitationThreshold" => Boxen.count(predicate1)
+        case "averageHighTemperature" => Boxen.average(predicate1, "tasmax")
+        case "averageLowTemperture" => Boxen.average(predicate1, "tasmin")
       }
 
       pathEndOrSingleSlash {

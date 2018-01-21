@@ -117,10 +117,10 @@ object Router {
       lazy val predicate2: Double => TimedDictionary => Boolean = getPredicate2(_predicate)
       lazy val variable: String = getVariable(_predicate, _variable)
       val box: Seq[TimedDictionary] => Seq[Double] = _operation match {
-        case "maxTemperatureThreshold" | "minTempertureThreshold" | "precipitationThreshold" => Boxen.count(predicate1)
+        case "maxTemperatureThreshold" | "minTemperatureThreshold" | "precipitationThreshold" => Boxen.count(predicate1)
         case "averageHighTemperature" => Boxen.average(predicate1, "tasmax")
-        case "averageLowTemperture" => Boxen.average(predicate1, "tasmin")
-        case "maxHighTemperture" => Boxen.maximum(predicate1, "tasmax")
+        case "averageLowTemperature" => Boxen.average(predicate1, "tasmin")
+        case "maxHighTemperature" => Boxen.maximum(predicate1, "tasmax")
         case "minLowTemperature" => Boxen.minimum(predicate1, "tasmin")
       }
 
@@ -360,6 +360,7 @@ object Router {
 
   def routes() =
     cors(settings) {
+      pathPrefix("indicator") { indicator } ~
       pathPrefix("arrayIndicator") { arrayIndicator } ~
       pathPrefix("arrayBaselineIndicator") { arrayBaselineIndicator } ~
       pathPrefix("arrayPredicateIndicator") { arrayPredicateIndicator } ~

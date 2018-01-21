@@ -120,6 +120,8 @@ object Router {
         case "maxTemperatureThreshold" | "minTempertureThreshold" | "precipitationThreshold" => Boxen.count(predicate1)
         case "averageHighTemperature" => Boxen.average(predicate1, "tasmax")
         case "averageLowTemperture" => Boxen.average(predicate1, "tasmin")
+        case "maxHighTemperture" => Boxen.maximum(predicate1, "tasmax")
+        case "minLowTemperature" => Boxen.minimum(predicate1, "tasmin")
       }
 
       pathEndOrSingleSlash {

@@ -23,6 +23,24 @@ object Boxen {
     List(xs.reduce(_ + _) / xs.length)
   }
 
+  def maximum(predicate: TimedDictionary => Boolean, variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .reduce({ (x: Double, y: Double) => if (x >= y) x; else y })
+    )
+  }
+
+  def minimum(predicate: TimedDictionary => Boolean, variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .reduce({ (x: Double, y: Double) => if (x <= y) x; else y })
+    )
+  }
+
   def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     List(
       dictionaries

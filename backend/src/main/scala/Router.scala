@@ -34,7 +34,7 @@ object Router {
       allowedMethods = scala.collection.immutable.Seq(GET, POST, PUT, HEAD, OPTIONS, DELETE)
     )
 
-  def parsePredicate(_predicate: Option[String]): TimedDictionary => Boolean = {
+  def getPredicate(_predicate: Option[String]): TimedDictionary => Boolean = {
     _predicate match {
       case Some(predicate) =>
         val operation =
@@ -66,50 +66,73 @@ object Router {
     }
   }
 
+  def getVariable(_predicate: Option[String], _variable: Option[String]): String = {
+    _predicate match {
+      case Some(predicate) =>
+        val operation =
+          if (predicate contains ">=") ">="
+          else if (predicate contains "<=") "<="
+          else if (predicate contains ">") ">"
+          else if (predicate contains "<") "<"
+          else throw new Exception("No such operation")
+        predicate.split(operation).head.trim.toLowerCase match {
+          case "tasmin" => "tasmin"
+          case "tasmax" => "tasmax"
+          case "pr" => "pr"
+          case _ => throw new Exception("No such variable")
+        }
+      case None =>
+        _variable match {
+          case Some(variable) => variable
+          case _ => throw new Exception("No variable")
+        }
+    }
+  }
+
   // ---------------------------------
 
-  // def indicator = {
-  //   parameter("indicator", "startTime", "endTime", "divisions", "predicate" ?, "variable" ?) { (_indicator, _startTime, _endTime, _divisions, _baseline, _variable) =>
-  //     val startTime  = ZonedDateTime.parse(_startTime)
-  //     val endTime = ZonedDateTime.parse(_endTime)
-  //     val division: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divisions match {
-  //       case "month" => Dividers.divideByCalendarMonth
-  //       case "year" => Dividers.divideByCalendarYear
-  //       case "infinity" => Dividers.divideByInfinity
-  //     }
-  //     val predicate: Double => Boolean = _baseline match {
-  //       case Some(baseline) => { x: Double => x > baseline.toDouble }
-  //       case None => { x: Double => true }
-  //     }
-  //     val box: Seq[TimedDictionary] => Seq[Double] = (_indicator, _baseline, _variable) match {
-  //       // case ("minTempertureThreshold", _, _) => Boxen.count(predicate, "tasmin")
-  //       // case ("
-  //     }
+  def indicator = {
+    parameter("operation", "startTime", "endTime", "divisions", "predicate" ?, "variable" ?) { (_operation, _startTime, _endTime, _divisions, _predicate, _variable) =>
+      val startTime  = ZonedDateTime.parse(_startTime)
+      val endTime = ZonedDateTime.parse(_endTime)
+      val division: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divisions match {
+        case "month" => Dividers.divideByCalendarMonth
+        case "year" => Dividers.divideByCalendarYear
+        case "infinity" => Dividers.divideByInfinity
+      }
+      lazy val predicate: TimedDictionary => Boolean = getPredicate(_predicate)
+      val variable: String = getVariable(_predicate, _variable)
+      val box: Seq[TimedDictionary] => Seq[Double] = _operation match {
+        case "maxTemperatureThreshold" | "minTempertureThreshold" | "precipitationThreshold" => Boxen.count(predicate)
+        case "averageHighTemperature" => Boxen.average(predicate, "tasmax")
+        case "averageLowTemperture" => Boxen.average(predicate, "tasmin")
+      }
 
-  //     pathEndOrSingleSlash {
-  //       post {
-  //         entity(as[String]) { json =>
-  //           val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
+      pathEndOrSingleSlash {
+        post {
+          entity(as[String]) { json =>
+            val area: MultiPolygon = json.extractGeometries[MultiPolygon].head
 
-  //           complete {
-  //             Operations.futureQuery(
-  //               startTime, endTime, area,
-  //               division,
-  //               Narrowers.byMean,
-  //               box
-  //             ).map({ f =>
-  //               f.map({ case (_k, _v) =>
-  //                 val k = _k.format(dateTimeFormat)
-  //                 val v = _v.toList
-  //                 k -> v
-  //               }).toJson
-  //             })
-  //           }
+            complete {
+              Operations.futureQuery(
+                startTime, endTime,
+                area,
+                division,
+                Narrowers.byMean,
+                box
+              ).map({ f =>
+                f.map({ case (_k, _v) =>
+                  val k = _k.format(dateTimeFormat)
+                  val v = _v.toList
+                  k -> v
+                }).toJson
+              })
+            }
 
-  //         }}}
+          }}}
 
-  //   }
-  // }
+    }
+  }
 
   def arrayIndicator = {
     parameter("box" ?, "startTime", "endTime", "divider" ?) { (_box, _startTime, _endTime, _divider) =>

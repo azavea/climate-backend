@@ -7,6 +7,22 @@ import Operations.TimedDictionary
 
 object Boxen {
 
+  def count(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .filter(predicate)
+        .length.toDouble
+    )
+  }
+
+  def average(predicate: TimedDictionary => Boolean, variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val xs =
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+    List(xs.reduce(_ + _) / xs.length)
+  }
+
   def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     List(
       dictionaries

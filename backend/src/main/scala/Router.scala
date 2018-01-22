@@ -125,6 +125,7 @@ object Router {
         case "percentileHighTemperature" => Boxen.percentile(_predicate, "tasmax")
         case "percentileLowTemperature" => Boxen.percentile(_predicate, "tasmin")
         case "percentilePrecipitation" => Boxen.percentile(_predicate, "pr")
+        case "totalPrecipitation" => Boxen.total(predicate1, "pr")
       }
 
       pathEndOrSingleSlash {

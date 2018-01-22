@@ -55,6 +55,15 @@ object Boxen {
     List(xs(index))
   }
 
+  def total(predicate: TimedDictionary => Boolean, variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .sum
+    )
+  }
+
   /* --------------------------------- */
 
   def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {

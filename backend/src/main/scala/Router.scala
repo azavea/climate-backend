@@ -44,21 +44,14 @@ object Router {
           else if (predicate contains "<") "<"
           else throw new Exception("No such operation")
         val variable = predicate.split(operation).head.trim.toLowerCase match {
-          case "tasmin" => "tasmin"
-          case "tasmax" => "tasmax"
-          case "tasavg" => "tasavg"
           case "pr" => "pr"
+          case "tasavg" => "tasavg"
+          case "tasmax" => "tasmax"
+          case "tasmin" => "tasmin"
           case _ => throw new Exception("No such variable")
         }
         { y: Double => td: TimedDictionary =>
-          val x = variable match {
-            case "tasavg" =>
-              val tasmax = td._2.getOrElse("tasmax", throw new Exception("No such variable"))
-              val tasmin = td._2.getOrElse("tasmin", throw new Exception("No such variable"))
-              (tasmax + tasmin)/2.0
-            case variable: String =>
-              td._2.getOrElse(variable, throw new Exception("No such variable"))
-          }
+          val x = td._2.getOrElse(variable, throw new Exception("No such variable"))
           operation match {
             case ">=" => x >= y
             case "<=" => x <= y
@@ -97,9 +90,10 @@ object Router {
           else if (predicate contains "<") "<"
           else throw new Exception("No such operation")
         predicate.split(operation).head.trim.toLowerCase match {
-          case "tasmin" => "tasmin"
-          case "tasmax" => "tasmax"
           case "pr" => "pr"
+          case "tasavg" => "tasavg"
+          case "tasmax" => "tasmax"
+          case "tasmin" => "tasmin"
           case _ => throw new Exception("No such variable")
         }
       case None =>

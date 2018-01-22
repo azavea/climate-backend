@@ -120,11 +120,7 @@ object Boxen {
     List(
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) =>
-          val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
-          val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
-          baseline - (tasmax+tasmin)/2.0
-        })
+        .map({ case (zdt, d) => baseline - d.getOrElse("tasavg", throw new Exception("No such variable")) })
         .sum
     )
   }
@@ -133,11 +129,7 @@ object Boxen {
     List(
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) =>
-          val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
-          val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
-          273.15 - (tasmax + tasmin)/2.0
-        })
+        .map({ case (zdt, d) => 273.15 - d.getOrElse("tasavg", throw new Exception("No such variable")) })
         .scanLeft(0.0)(_ + _)
         .reduce({ (a: Double, b: Double) => math.max(a,b) })
     )

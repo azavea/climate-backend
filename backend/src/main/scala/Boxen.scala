@@ -41,6 +41,22 @@ object Boxen {
     )
   }
 
+  def percentile(_predicate: Option[String], variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val p = _predicate match {
+      case Some(predicate) => (predicate.toDouble)/100.0
+      case None => 0.50
+    }
+    val xs = dictionaries
+      .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+      .sorted
+      .toArray
+    val index = Math.round(math.min(xs.length * p, xs.length-1)).toInt
+
+    List(xs(index))
+  }
+
+  /* --------------------------------- */
+
   def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     List(
       dictionaries

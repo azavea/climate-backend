@@ -122,6 +122,9 @@ object Router {
         case "averageLowTemperature" => Boxen.average(predicate1, "tasmin")
         case "maxHighTemperature" => Boxen.maximum(predicate1, "tasmax")
         case "minLowTemperature" => Boxen.minimum(predicate1, "tasmin")
+        case "percentileHighTemperature" => Boxen.percentile(_predicate, "tasmax")
+        case "percentileLowTemperature" => Boxen.percentile(_predicate, "tasmin")
+        case "percentilePrecipitation" => Boxen.percentile(_predicate, "pr")
       }
 
       pathEndOrSingleSlash {

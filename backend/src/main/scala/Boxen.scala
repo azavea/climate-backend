@@ -19,7 +19,7 @@ object Boxen {
     val xs =
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
     List(xs.reduce(_ + _) / xs.length)
   }
 
@@ -27,7 +27,7 @@ object Boxen {
     List(
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
         .reduce({ (x: Double, y: Double) => if (x >= y) x; else y })
     )
   }
@@ -36,7 +36,7 @@ object Boxen {
     List(
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
         .reduce({ (x: Double, y: Double) => if (x <= y) x; else y })
     )
   }
@@ -47,7 +47,7 @@ object Boxen {
       case None => 0.50
     }
     val xs = dictionaries
-      .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+      .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
       .sorted
       .toArray
     val index = Math.round(math.min(xs.length * p, xs.length-1)).toInt
@@ -59,7 +59,7 @@ object Boxen {
     List(
       dictionaries
         .filter(predicate)
-        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception) })
+        .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
         .sum
     )
   }

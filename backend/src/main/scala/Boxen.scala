@@ -43,9 +43,10 @@ object Boxen {
 
   def percentile(predicate: TimedDictionary => Boolean, _baseline: Option[String], variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
     val p = _baseline match {
-      case Some(s) => (s.toDouble)/100.0
+      case Some(s) => math.max(math.min((s.toDouble)/100.0, 1.0), 0.0)
       case None => 0.50
     }
+
     val xs = dictionaries
       .map({ case (zdt, d) => d.getOrElse(variable, throw new Exception("No such variable")) })
       .sorted
@@ -91,12 +92,15 @@ object Boxen {
   }
 
   def maxStreak(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    List(
-      spans(dictionaries, predicate)
-        .map(_.length)
-        .reduce({ (a: Int, b: Int) => if (a > b) a; else b })
-        .toDouble
-    )
+    val streaks = spans(dictionaries, predicate).map(_.length)
+    if (streaks.length > 0) {
+      List(
+        streaks
+          .reduce({ (a: Int, b: Int) => if (a > b) a; else b })
+          .toDouble
+      )
+    }
+    else List(0.0)
   }
 
   def diurnalTemperatureRange(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {

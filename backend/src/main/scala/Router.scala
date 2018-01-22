@@ -46,11 +46,19 @@ object Router {
         val variable = predicate.split(operation).head.trim.toLowerCase match {
           case "tasmin" => "tasmin"
           case "tasmax" => "tasmax"
+          case "tasavg" => "tasavg"
           case "pr" => "pr"
           case _ => throw new Exception("No such variable")
         }
         { y: Double => td: TimedDictionary =>
-          val x = td._2.getOrElse(variable, throw new Exception)
+          val x = variable match {
+            case "tasavg" =>
+              val tasmax = td._2.getOrElse("tasmax", throw new Exception("No such variable"))
+              val tasmin = td._2.getOrElse("tasmin", throw new Exception("No such variable"))
+              (tasmax + tasmin)/2.0
+            case variable: String =>
+              td._2.getOrElse(variable, throw new Exception("No such variable"))
+          }
           operation match {
             case ">=" => x >= y
             case "<=" => x <= y
@@ -105,7 +113,7 @@ object Router {
   // ---------------------------------
 
   def indicator = {
-    parameter("operation", "startTime", "endTime", "divisions", "predicate" ?, "variable" ?) { (_operation, _startTime, _endTime, _divisions, _predicate, _variable) =>
+    parameter("operation", "startTime", "endTime", "divisions", "predicate" ?, "variable" ?, "baseline" ?) { (_operation, _startTime, _endTime, _divisions, _predicate, _variable, _baseline) =>
       val startTime  = ZonedDateTime.parse(_startTime)
       val endTime = ZonedDateTime.parse(_endTime)
       val division: Seq[KV] => Map[ZonedDateTime, Seq[KV]] = _divisions match {
@@ -122,10 +130,16 @@ object Router {
         case "averageLowTemperature" => Boxen.average(predicate1, "tasmin")
         case "maxHighTemperature" => Boxen.maximum(predicate1, "tasmax")
         case "minLowTemperature" => Boxen.minimum(predicate1, "tasmin")
-        case "percentileHighTemperature" => Boxen.percentile(_predicate, "tasmax")
-        case "percentileLowTemperature" => Boxen.percentile(_predicate, "tasmin")
-        case "percentilePrecipitation" => Boxen.percentile(_predicate, "pr")
+        case "percentileHighTemperature" => Boxen.percentile(predicate1, _baseline, "tasmax")
+        case "percentileLowTemperature" => Boxen.percentile(predicate1, _baseline, "tasmin")
+        case "percentilePrecipitation" => Boxen.percentile(predicate1, _baseline, "pr")
         case "totalPrecipitation" => Boxen.total(predicate1, "pr")
+        case "frostDays" => Boxen.count(getPredicate1(Some("tasmin<=273.15")))
+        case "maxConsecutiveDryDays" => Boxen.maxStreak(getPredicate1(Some("pr<=0.0")))
+        case "drySpells" => Boxen.countStreaks(predicate1, _baseline)
+        case "heatingDegreeDays" => Boxen.degreeDays(predicate1, _baseline)
+        case "coolingDegreeDays" => Boxen.degreeDays(predicate1, _baseline)
+        case "diurnalTemperatureRange" => Boxen.diurnalTemperatureRange(predicate1)
       }
 
       pathEndOrSingleSlash {

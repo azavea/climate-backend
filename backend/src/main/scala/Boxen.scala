@@ -41,9 +41,9 @@ object Boxen {
     )
   }
 
-  def percentile(_predicate: Option[String], variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    val p = _predicate match {
-      case Some(predicate) => (predicate.toDouble)/100.0
+  def percentile(predicate: TimedDictionary => Boolean, _baseline: Option[String], variable: String)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val p = _baseline match {
+      case Some(s) => (s.toDouble)/100.0
       case None => 0.50
     }
     val xs = dictionaries
@@ -64,31 +64,6 @@ object Boxen {
     )
   }
 
-  /* --------------------------------- */
-
-  def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    List(
-      dictionaries
-        .map({ case (_, d) => d.getOrElse("tasmin", throw new Exception) })
-        .reduce({ (a, x) => math.max(a, x) })
-    )
-  }
-
-  def averageTasmax(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    val tasmaxen = dictionaries
-      .map({ case (_, d) => d.getOrElse("tasmax", throw new Exception) })
-    List(tasmaxen.sum / tasmaxen.length)
-  }
-
-  def extremePrecipitationEvents(baseline: Double)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    List(
-      dictionaries
-        .map({ case (_, d) => d.getOrElse("pr", throw new Exception) })
-        .filter({ pr => pr > baseline })
-        .length
-    )
-  }
-
   private def spans[X](xs: Seq[X], pred: X => Boolean): Seq[Seq[X]] = {
     if (xs.length == 0)
       return List()
@@ -100,10 +75,68 @@ object Boxen {
     }
   }
 
-  def heatWaveDurationIndex(baseline: Double)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
-    val ts = dictionaries.map({ case (_, d) => d.getOrElse("tasmax", throw new Exception) })
+  def countStreaks(predicate: TimedDictionary => Boolean, _baseline: Option[String])(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val baseline = _baseline match {
+      case Some(s) => s.toDouble
+      case None => 0.0
+    }
 
-    spans(ts, { temp: Double => temp > baseline }).map(_.length.toDouble)
+    List(
+      spans(dictionaries, predicate)
+        .map(_.length)
+        .filter(_ >= baseline)
+        .length
+        .toDouble
+    )
+  }
+
+  def maxStreak(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      spans(dictionaries, predicate)
+        .map(_.length)
+        .reduce({ (a: Int, b: Int) => if (a > b) a; else b })
+        .toDouble
+    )
+  }
+
+  def diurnalTemperatureRange(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val xs =
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) =>
+          val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
+          val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
+          tasmax - tasmin
+        })
+    List(xs.sum / xs.length)
+  }
+
+  def degreeDays(predicate: TimedDictionary => Boolean, _baseline: Option[String])(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    val baseline = _baseline match {
+      case Some(s) => s.toDouble
+      case None => 0.0
+    }
+
+    List(
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) =>
+          val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
+          val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
+          baseline - (tasmax + tasmin)/2.0
+        })
+        .sum
+    )
+  }
+
+  /* ------------------------------------------------------------------------ */
+
+  def maxTasmin(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .map({ case (_, d) => d.getOrElse("tasmin", throw new Exception) })
+        .reduce({ (a, x) => math.max(a, x) })
+    )
   }
 
 }

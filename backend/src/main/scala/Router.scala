@@ -137,9 +137,9 @@ object Router {
         case "frostDays" => Boxen.count(getPredicate1(Some("tasmin<=273.15")))
         case "maxConsecutiveDryDays" => Boxen.maxStreak(getPredicate1(Some("pr<=0.0")))
         case "drySpells" => Boxen.countStreaks(predicate1, _baseline)
-        case "heatingDegreeDays" => Boxen.degreeDays(predicate1, _baseline)
-        case "coolingDegreeDays" => Boxen.degreeDays(predicate1, _baseline)
+        case "heatingDegreeDays" | "coolingDegreeDays" => Boxen.degreeDays(predicate1, _baseline)
         case "diurnalTemperatureRange" => Boxen.diurnalTemperatureRange(predicate1)
+        case "accumulatedFreezingDegreeDays" => Boxen.accumulatedFreezingDegreeDays(predicate1)
       }
 
       pathEndOrSingleSlash {

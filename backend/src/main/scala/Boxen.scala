@@ -123,9 +123,23 @@ object Boxen {
         .map({ case (zdt, d) =>
           val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
           val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
-          baseline - (tasmax + tasmin)/2.0
+          baseline - (tasmax+tasmin)/2.0
         })
         .sum
+    )
+  }
+
+  def accumulatedFreezingDegreeDays(predicate: TimedDictionary => Boolean)(dictionaries: Seq[TimedDictionary]): Seq[Double] = {
+    List(
+      dictionaries
+        .filter(predicate)
+        .map({ case (zdt, d) =>
+          val tasmax = d.getOrElse("tasmax", throw new Exception("No such variable"))
+          val tasmin = d.getOrElse("tasmin", throw new Exception("No such variable"))
+          273.15 - (tasmax + tasmin)/2.0
+        })
+        .scanLeft(0.0)(_ + _)
+        .reduce({ (a: Double, b: Double) => math.max(a,b) })
     )
   }
 

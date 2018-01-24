@@ -51,6 +51,7 @@ object Narrowers {
     Map(
       "tasmin" -> tasmin,
       "tasmax" -> tasmax,
+      "tasavg" -> (tasmin+tasmax)/2.0,
       "pr" -> pr
     )
   }
